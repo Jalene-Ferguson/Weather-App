@@ -1,9 +1,9 @@
-const apiKey = "d91f911bcf2c0f925fb6535547a5ddc9"
+const apiKey = "31ae21a430ca5cb22c5509fdc6da024c"
 const apiRootUrl = "https://api.openweathermap.org"
 const form = document.getElementById("search-form")
 const input = document.getElementById("search-input")
-const button = document.getElementById("search-button")
-const todayContainer = document.getElementById("today-weather")
+const button = document.getElementById("search-btn")
+const todayContainer = document.getElementById("daily-weather")
 
 
 
