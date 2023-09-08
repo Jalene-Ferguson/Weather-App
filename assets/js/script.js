@@ -1,82 +1,67 @@
-const apiKey = "31ae21a430ca5cb22c5509fdc6da024c"
-const apiRootUrl = "https://api.openweathermap.org"
-const form = document.getElementById("search-form")
-const input = document.getElementById("search-input")
-const button = document.getElementById("search-btn")
-const todayContainer = document.getElementById("daily-weather")
+const apiKey = "31ae21a430ca5cb22c5509fdc6da024c";
+const input = document.querySelector(".search-input");
+const searchButton = document.querySelector(".search-btn");
+const weatherDiv = document.querySelector(".weather-card")
+const todayContainer = document.querySelector(".daily-weather");
 
-
-
-form.addEventListener("submit", searchFormSubmit)
-
-function searchFormSubmit(event) {
-console.log(event)
-event.preventDefault()
-
-const searchData = input.value.trim()
-console.log("searchData", searchData)
-
-getCoords(searchData)
+const createWeatherCard = (cityName, weatherItem) => {
+    if(index === 0) {
+    return `<div class="details">
+        <h2>${cityName} (${weatherItem.dt_txt.split(" ")[0]})</h2>
+        <h4>Temp: ${(weatherItem.main.temp - 273.15).toFixed(2)}°F</h4>
+        <h4>Wind: ${weatherItem.wind.speed} MPH</h4>
+        <h4>Humidity: ${weatherItem.main.humidity} %</h4>
+            </div>`;
+    }else {
+        return `<li class="card">
+        <h3>(${weatherItem.dt_txt.split(" ")[0]})</h3>
+        <h4>Temp: ${(weatherItem.main.temp - 273.15).toFixed(2)}°F</h4>
+        <h4>Wind: ${weatherItem.wind.speed} MPH</h4>
+        <h4>Humidity: ${weatherItem.main.humidity} %</h4>
+    </li>`;
+    }
 }
 
-function getCoords(city) {
-    const apiUrl = `${apiRootUrl}/geo/1.0/direct?q=${city}&limit=5&appid=${apiKey}`
-    fetch(apiUrl)
-    .then(function (res) {
-      return res.json();
-    })
-    .then(function (data) {
-    console.log("data", data)
-    getWeather(data.lat, data.lon, city)
-    })
-    .catch(function (err) {
-      console.error(err);
+const getWeather = (cityName, lat, lon) => {
+    const weatherApiUrl = `http://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}`;
+
+    fetch(weatherApiUrl).then(res => res.json()).then(data => {
+        const uniqueForecastDays = [];
+        const fiveDayForecast = data.list.filter(forecast => {
+            const forecastDate = new Date(forecast.dt_txt).getDate();
+            if(uniqueForecastDays.includes(forecastDate)) {
+                return uniqueForecastDays.push(forecastDate);
+            }
+        });
+
+        cityInput.value = "";
+        todayContainer.innerHTML ="";
+        weatherDiv.innerHTML = "";
+
+        fiveDayForecast.forEach(weatherItem => {
+            if(index === 0) {
+                todayContainer.insertAdjacentHTML("beforeend", createWeatherCard(cityName, weatherItem));
+            } else {
+            weatherDiv.insertAdjacentHTML("beforeend", createWeatherCard(cityName, weatherItem));
+            }
+        });
+    }).catch(() => {
+        alert("Error occurred2.");
     });
 }
 
-function getWeather(lat, long, cityName) {
-    const apiUrl = `${apiRootUrl}/data/2.5/forecast?lat=${lat}&lon=${long}&units=imperial&appid=${apiKey}`
-    fetch(apiUrl)
-    .then(function (res) {
-      return res.json();
-    })
-    .then(function (data) {
-    console.log("data", data)
-    renderTodayForcast(data)
-    })
-    .catch(function (err) {
-      console.error(err);
+const getCityCoords = () => {
+    const cityName = input.value.trim();
+    if(!cityName) return;
+    const geoApiUrl = `http://api.openweathermap.org/geo/1.0/direct?q=${cityName}&limit=5&appid=${apiKey}`;
+
+    fetch(geoApiUrl).then(res => res.json()).then(data => {
+        if(!data.length) return alert(`${cityName} coordinates not found`);
+        const { name, lat, lon } = data[0];
+        getWeather(name, lat, lon);
+    }).catch(() => {
+        alert("Error occurred1.");
     });
 }
 
-function renderTodayForcast(forecast) {
-    // variables for data from api
-  var iconUrl = `https://openweathermap.org/img/w/${forecast.weather[0].icon}.png`;
-  var iconDescription = forecast.weather[0].description;
-  var tempF = forecast.main.temp;
-  var humidity = forecast.main.humidity;
-  var windMph = forecast.wind.speed;
-
-  // Create elements for a card
-  var col = document.createElement('div');
-  var card = document.createElement('div');
-  var cardBody = document.createElement('div');
-  var cardTitle = document.createElement('h5');
-  var weatherIcon = document.createElement('img');
-  var tempEl = document.createElement('p');
-  var windEl = document.createElement('p');
-  var humidityEl = document.createElement('p');
-
-  col.append(card);
-  card.append(cardBody);
-  cardBody.append(cardTitle, weatherIcon, tempEl, windEl, humidityEl);
-
-  // Add content to elements
-  weatherIcon.setAttribute('src', iconUrl);
-  weatherIcon.setAttribute('alt', iconDescription);
-  tempEl.textContent = `Temp: ${tempF} °F`;
-  windEl.textContent = `Wind: ${windMph} MPH`;
-  humidityEl.textContent = `Humidity: ${humidity} %`;
-
-  todayContainer.append(col);
-}
+searchButton.addEventListener("click", getCityCoords);
